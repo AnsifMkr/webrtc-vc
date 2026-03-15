@@ -10,7 +10,7 @@ app.use(cors());
 
 const io = new Server(server, {
     cors: {
-        origin: '*', // Allow all origins for this project
+        origin: ['http://localhost:5173', 'https://webrtc-vc-green.vercel.app'], // Allow local frontend and deployed frontend
         methods: ['GET', 'POST'],
     },
 });
