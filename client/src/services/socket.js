@@ -8,7 +8,8 @@ class SocketService {
     constructor() {
         this.socket = io(SOCKET_URL, {
             autoConnect: false, // We connect explicitly when joining/landing
-            transports: ['websocket', 'polling']
+            transports: ['polling'],
+            withCredentials: true
         });
 
         this.socket.on('connect', () => {

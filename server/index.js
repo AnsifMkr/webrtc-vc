@@ -12,7 +12,10 @@ const io = new Server(server, {
     cors: {
         origin: ['http://localhost:5173', 'https://webrtc-vc-green.vercel.app'], // Allow local frontend and deployed frontend
         methods: ['GET', 'POST'],
+        credentials: true
     },
+    transports: ['polling'],
+    allowEIO3: true
 });
 
 const PORT = 5000;
