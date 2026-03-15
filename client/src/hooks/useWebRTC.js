@@ -102,19 +102,26 @@ export const useWebRTC = (roomId) => {
         // Join the room (Handle refresh / direct URL access)
         socket.emit('join-room', roomId);
 
-        // Handle User Joined -> Initiate Offer
-        const handleUserJoined = async () => {
-            console.log("User joined, creating offer as Caller");
-            const pc = createPeerConnection(); // Ensure PC exists
-            if (!pc) return;
-
-            try {
-                const offer = await pc.createOffer();
-                await pc.setLocalDescription(offer);
-                socket.emit('offer', { signal: offer, roomId });
-                setConnectionState('connecting');
-            } catch (err) {
-                console.error("Error creating offer:", err);
+        // Handle User Joined -> Initiate connection sequence safely
+        const handleUserJoined = async ({ userId }) => {
+            console.log("User joined:", userId, "I will be the Caller (Impolite peer)");
+            // If someone joins, the person ALREADY in the room creates the offer
+            // We designate the existing user as 'impolite' (caller) and the new joiner as 'polite' (receiver)
+            // By emitting 'ready', we tell the other peer we are here and listening
+            
+            // To ensure 1-to-1, we only act if we are ready
+            if (mediaState === 'ready') {
+                const pc = createPeerConnection();
+                if (!pc) return;
+                
+                try {
+                    const offer = await pc.createOffer();
+                    await pc.setLocalDescription(offer);
+                    socket.emit('offer', { signal: offer, roomId });
+                    setConnectionState('connecting');
+                } catch (err) {
+                    console.error("Error creating offer:", err);
+                }
             }
         };
 
@@ -127,15 +134,14 @@ export const useWebRTC = (roomId) => {
             }
 
             try {
+                // If we get an offer and we aren't stable, we just accept it and rollback our own offer.
+                // This makes this peer "polite" by default when receiving an offer.
                 if (pc.signalingState !== 'stable') {
-                    console.warn("Signaling state is not stable:", pc.signalingState);
-                    await Promise.all([
-                        pc.setLocalDescription({ type: 'rollback' }),
-                        pc.setRemoteDescription(new RTCSessionDescription(signal))
-                    ]);
-                } else {
-                    await pc.setRemoteDescription(new RTCSessionDescription(signal));
+                    console.warn("Signaling state is not stable, rolling back local offer");
+                    await pc.setLocalDescription({ type: 'rollback' });
                 }
+                
+                await pc.setRemoteDescription(new RTCSessionDescription(signal));
 
                 const answer = await pc.createAnswer();
                 await pc.setLocalDescription(answer);
@@ -150,11 +156,12 @@ export const useWebRTC = (roomId) => {
         const handleAnswer = async ({ signal, responderId }) => {
             console.log("Received Answer from", responderId);
             const pc = peerConnection.current;
-            if (pc && pc.signalingState !== 'stable') {
+            if (pc) {
                 try {
                     await pc.setRemoteDescription(new RTCSessionDescription(signal));
+                    setConnectionState('connected'); // Optimistically update state
                 } catch (err) {
-                    console.error("Error passing answer:", err);
+                    console.error("Error setting remote description from answer:", err);
                 }
             }
         };
