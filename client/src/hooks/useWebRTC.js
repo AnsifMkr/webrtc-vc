@@ -119,22 +119,16 @@ export const useWebRTC = (roomId) => {
         };
 
         // Handle Offer -> Create Answer
-        const handleOffer = async ({ signal }) => {
-            console.log("Received Offer");
+        const handleOffer = async ({ signal, callerId }) => {
+            console.log("Received Offer from", callerId);
             let pc = peerConnection.current;
             if (!pc) {
                 pc = createPeerConnection();
             }
 
             try {
-                // If we are in have-local-offer state (glare), we usually rollback, but strict 1-to-1 often simplifies by polite/impolite roles.
-                // Here we just accept the latest offer for simplicity unless we want robust collision handling.
                 if (pc.signalingState !== 'stable') {
-                    // In a true production app, use "Perfect Negotiation" pattern.
-                    // For this strict concept, we assume strict Caller/Callee or proceed.
                     console.warn("Signaling state is not stable:", pc.signalingState);
-                    // If we both offered, one must yield. Simple heuristic: Compare IDs? 
-                    // Or just process if we can.
                     await Promise.all([
                         pc.setLocalDescription({ type: 'rollback' }),
                         pc.setRemoteDescription(new RTCSessionDescription(signal))
@@ -153,10 +147,10 @@ export const useWebRTC = (roomId) => {
         };
 
         // Handle Answer
-        const handleAnswer = async ({ signal }) => {
-            console.log("Received Answer");
+        const handleAnswer = async ({ signal, responderId }) => {
+            console.log("Received Answer from", responderId);
             const pc = peerConnection.current;
-            if (pc) {
+            if (pc && pc.signalingState !== 'stable') {
                 try {
                     await pc.setRemoteDescription(new RTCSessionDescription(signal));
                 } catch (err) {
@@ -166,9 +160,10 @@ export const useWebRTC = (roomId) => {
         };
 
         // Handle ICE Candidate
-        const handleIceCandidate = async ({ candidate }) => {
+        const handleIceCandidate = async ({ candidate, senderId }) => {
+            console.log("Received ICE Candidate from", senderId);
             const pc = peerConnection.current;
-            if (pc) {
+            if (pc && candidate) {
                 try {
                     await pc.addIceCandidate(new RTCIceCandidate(candidate));
                 } catch (err) {
