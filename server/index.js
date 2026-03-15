@@ -10,11 +10,11 @@ app.use(cors());
 
 const io = new Server(server, {
     cors: {
-        origin: ['http://localhost:5173', 'https://webrtc-vc-green.vercel.app'], // Allow local frontend and deployed frontend
+        origin: ['http://localhost:5173', 'https://webrtc-vc-green.vercel.app', 'https://webrtc-vc-backend.onrender.com'], // Allow local frontend and deployed frontend
         methods: ['GET', 'POST'],
         credentials: true
     },
-    transports: ['polling'],
+    transports: ['websocket', 'polling'],
     allowEIO3: true
 });
 

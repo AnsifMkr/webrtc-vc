@@ -1,6 +1,6 @@
 import { io } from 'socket.io-client';
 
-const SOCKET_URL = import.meta.env.VITE_SERVER_URL || 'https://webrtc-vc-backend.vercel.app';
+const SOCKET_URL = import.meta.env.VITE_SERVER_URL || 'https://webrtc-vc-backend.onrender.com';
 
 class SocketService {
     socket;
@@ -8,7 +8,7 @@ class SocketService {
     constructor() {
         this.socket = io(SOCKET_URL, {
             autoConnect: false, // We connect explicitly when joining/landing
-            transports: ['polling'],
+            transports: ['websocket', 'polling'],
             withCredentials: true
         });
 
