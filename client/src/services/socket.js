@@ -1,6 +1,6 @@
 import { io } from 'socket.io-client';
 
-const SOCKET_URL = import.meta.env.VITE_SERVER_URL || 'https://webrtc-vc-backend.onrender.com';
+const SOCKET_URL = import.meta.env.VITE_SERVER_URL || 'https://webrtc-vc-backend-production.up.railway.app';
 
 class SocketService {
     socket;
